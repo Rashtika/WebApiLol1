@@ -1,22 +1,61 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ConsoleApp1;
+using Npgsql;
 
 namespace Example1.WebApi1.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
+
+
     public class ChampionController : ControllerBase
     {
+
+        string connectionString = "Host=localhost;Port=5433;Username=postgres;Password=Dakovo123;Database=ChampionDB;";
 
         private readonly List<Item> Items = new List<Item> { new BucketHelmet(), new AmuletOfLost(), new Shilterica() };
         private static List<Champion> Champions = new List<Champion> ();
 
-        private readonly ILogger<ChampionController> _logger;
-        private readonly object _context;
 
+        private readonly ILogger<ChampionController> _logger;
         public ChampionController(ILogger<ChampionController> logger)
         {
             _logger = logger;
+        }
+
+        [HttpGet(Name = "Find Champions")]
+        public List<Champion> GetAll()
+        {
+            using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
+            {
+                connection.Open();
+                string sql = "SELECT* FROM Champion";
+                using NpgsqlCommand cmd = new NpgsqlCommand(sql, connection);
+
+                //SqlCommand command = new SqlCommand();
+
+                using var reader = cmd.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    reader.Read();
+                    Champion champion = new Champion();
+                    
+                }
+
+            }
+            connection.Close();
+            return Champions;
+        }
+
+        [HttpPost(Name = "Insert Champion")]
+        public Champion Insert([FromBody]Champion champion)
+        {
+            using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
+            connection.Open();
+
+            Champions.Add(champion);
+
+            return champion;
         }
 
         [HttpGet(Name = "Get Champion")]
@@ -51,10 +90,7 @@ namespace Example1.WebApi1.Controllers
             }
 
             return NoContent();
-
-
         }
-
 
         [HttpDelete("{name}", Name = "Delete Champion")]
         public IActionResult Delete(string name)
@@ -73,8 +109,6 @@ namespace Example1.WebApi1.Controllers
                 Champions.Remove(championToRemove);
             }
 
-
-            
             return NoContent();
         }
 
