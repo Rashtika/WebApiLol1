@@ -1,19 +1,16 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ConsoleApp1;
 using Npgsql;
+using System.Data.Common;
 
 namespace Example1.WebApi1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-
-
     public class ChampionController : ControllerBase
     {
+        string connectionString = "Host=localhost;Port=5432;Username=postgres;Password=Dakovo123;Database=ChampionDB;";
 
-        string connectionString = "Host=localhost;Port=5433;Username=postgres;Password=Dakovo123;Database=ChampionDB;";
-
-        private readonly List<Item> Items = new List<Item> { new BucketHelmet(), new AmuletOfLost(), new Shilterica() };
         private static List<Champion> Champions = new List<Champion> ();
 
 
@@ -23,13 +20,30 @@ namespace Example1.WebApi1.Controllers
             _logger = logger;
         }
 
+        [HttpPost(Name = "Insert Champion")]
+        public IActionResult Insert([FromBody] Champion champion)
+        {
+            using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
+
+            string commandText = "Insert into \"Champion\" values (@Id, @Name, @Items)";
+            var ChampionFromDb = new Champion();
+            var command = new NpgsqlCommand(commandText, connection);
+
+            connection.Open();
+
+            Champions.Add(champion);
+
+            return Ok(champion);
+        }
+
         [HttpGet(Name = "Find Champions")]
         public List<Champion> GetAll()
         {
-            using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
+            List<Champion> champions = new List<Champion>();
+            using var connection = new NpgsqlConnection(connectionString);
             {
                 connection.Open();
-                string sql = "SELECT* FROM Champion";
+                string sql = "SELECT * FROM \"Champion\" c LEFT JOIN \"Weapons\" w ON c.\"Id\"=w.\"Id\" ";
                 using NpgsqlCommand cmd = new NpgsqlCommand(sql, connection);
 
                 //SqlCommand command = new SqlCommand();
@@ -37,28 +51,21 @@ namespace Example1.WebApi1.Controllers
                 using var reader = cmd.ExecuteReader();
                 if (reader.HasRows)
                 {
-                    reader.Read();
-                    Champion champion = new Champion();
-                    
-                }
+                    while (reader.Read())
+                    {
+                        champions.Add(new Champion
+                        {
+                            Name = reader["Name"].ToString(),
+                            Id = Guid.Parse(reader["Id"].ToString())
 
+                        });
+                }
             }
             connection.Close();
             return Champions;
         }
-
-        [HttpPost(Name = "Insert Champion")]
-        public Champion Insert([FromBody]Champion champion)
-        {
-            using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
-            connection.Open();
-
-            Champions.Add(champion);
-
-            return champion;
-        }
-
-        [HttpGet(Name = "Get Champion")]
+        
+        /*[HttpGet(Name = "Get Champions")]
         public List<Champion> Get() {
             return Champions;
         }
@@ -69,7 +76,7 @@ namespace Example1.WebApi1.Controllers
             Champions.Add(champion);
             _logger.LogInformation($"Created champion with name {champion.Name}");
             return champion;
-        }
+        }*/
 
         [HttpPut("{name}", Name = "Update Champion")]
         public async Task<IActionResult> Update(string name,[FromBody] Champion champion)

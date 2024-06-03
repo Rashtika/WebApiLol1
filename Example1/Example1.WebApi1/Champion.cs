@@ -8,36 +8,35 @@ namespace ConsoleApp1
 {
     public class Champion
     {
-        public Inventory? Inventory { get; set; }
+        public Guid Id;
+        public List<Item> Items { get; set; }
         public string? Name { set; get; }
-        public Champion(string name)
+        public Champion(string name, List<Item> items)
         {
             Name = name;
-            Inventory = new Inventory();
+            Items = items;
         }
         public Champion() { }
         public void Equip(Item item)
         {
-            if (Inventory != null)
+            if (Items != null)
             {
 
-                if (Inventory.Items.Count < 6)
+                if (Items.Count < 6)
                 {
-                    Inventory.Items.Add(item);
-                    item.OnEquip(this);
+                    Items.Add(item);
                 }
             }
         }
         public void UnEquip(Item item)
         {
-            if (Inventory != null) {
-                if (Inventory.Items.Count == 0) {
+            if (Items != null) {
+                if (Items.Count == 0) {
                     Console.WriteLine("Inventory is empty.");
                 } else {
-                    if (Inventory.Items.Contains(item))
+                    if (Items.Contains(item))
                     {
-                        Inventory.Items.Remove(item);
-                        item.OnUnEquip(this);
+                        Items.Remove(item);
                     }
                 }
             }

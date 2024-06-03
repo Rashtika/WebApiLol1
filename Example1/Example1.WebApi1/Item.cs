@@ -9,9 +9,12 @@ namespace ConsoleApp1
 {
     public abstract class Item : IDescription
     {
+        private Guid Id {  get; set; }
+        private bool IsActive { get; set; }
+        private DateOnly DateCreated { get; set; }
+        private int CreatedByUserId { get; set; }
+        private int UpdatedByUserId { get; set; }
         public string Name { get; set; }
-        public abstract void OnEquip (Champion champion);
-        public abstract void OnUnEquip(Champion champion);
 
         public abstract string getDescription();
 
