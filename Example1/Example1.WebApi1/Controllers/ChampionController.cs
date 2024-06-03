@@ -12,6 +12,7 @@ namespace Example1.WebApi1.Controllers
         private static List<Champion> Champions = new List<Champion> ();
 
         private readonly ILogger<ChampionController> _logger;
+        private readonly object _context;
 
         public ChampionController(ILogger<ChampionController> logger)
         {
@@ -32,17 +33,47 @@ namespace Example1.WebApi1.Controllers
         }
 
         [HttpPut("{name}", Name = "Update Champion")]
-        public Champion Update(string name,[FromBody] Champion champion)
+        public async Task<IActionResult> Update(string name,[FromBody] Champion champion)
         {
-            
-            return champion;
+
+            bool ChampionExist = Champions.Exists(obj => obj.Name == name);
+
+            if (!ChampionExist)
+            {
+                return BadRequest();
+            }
+
+            Champion GetChampionByName = Champions.FirstOrDefault(champion => champion.Name == name);
+
+            if (GetChampionByName != null)
+            {
+                GetChampionByName.Name = champion.Name;
+            }
+
+            return NoContent();
+
+
         }
+
 
         [HttpDelete("{name}", Name = "Delete Champion")]
         public IActionResult Delete(string name)
         {
-            
+            bool ChampionExist = Champions.Exists(obj => obj.Name == name);
+
+            if (!ChampionExist)
+            {
+                return BadRequest();
+            }
+
             Champion championToRemove = Champions.FirstOrDefault(x => x.Name == name);
+
+            if(championToRemove != null)
+            {
+                Champions.Remove(championToRemove);
+            }
+
+
             
             return NoContent();
         }
