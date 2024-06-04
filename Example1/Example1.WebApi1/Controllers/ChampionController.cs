@@ -29,7 +29,7 @@ namespace Example1.WebApi1.Controllers
             using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
             {
                 connection.Open();
-                string sql = "SELECT* FROM Champion";
+                string sql = "SELECT* FROM \"Champion\"";
                 using NpgsqlCommand cmd = new NpgsqlCommand(sql, connection);
 
                 //SqlCommand command = new SqlCommand();
@@ -38,8 +38,17 @@ namespace Example1.WebApi1.Controllers
                 if (reader.HasRows)
                 {
                     reader.Read();
-                    Champion champion = new Champion();
-                    
+                    Champion champion = new Champion
+                    {
+                        Id = reader.GetGuid(reader.GetOrdinal("Id")),
+                        Name = reader.GetString(reader.GetOrdinal("Name")),
+                        InventoryId = reader.GetGuid(reader.GetOrdinal("InventoryId")),
+                        IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
+                        DateCreated = reader.GetDateTime(reader.GetOrdinal("DateCreated")),
+                        CreatedByUserId = reader.GetInt32(reader.GetOrdinal("CreatedByUserId")),
+                        UpdatedByUserId = reader.GetInt32(reader.GetOrdinal("UpdatedByUserId"))
+                    };
+
                 }
 
             }
@@ -58,6 +67,7 @@ namespace Example1.WebApi1.Controllers
             return champion;
         }
 
+        /*
         [HttpGet(Name = "Get Champion")]
         public List<Champion> Get() {
             return Champions;
@@ -70,6 +80,7 @@ namespace Example1.WebApi1.Controllers
             _logger.LogInformation($"Created champion with name {champion.Name}");
             return champion;
         }
+        */
 
         [HttpPut("{name}", Name = "Update Champion")]
         public async Task<IActionResult> Update(string name,[FromBody] Champion champion)
@@ -110,6 +121,21 @@ namespace Example1.WebApi1.Controllers
             }
 
             return NoContent();
+        }
+        [HttpGet("test-connection", Name = "TestDatabaseConnection")]
+        public IActionResult TestConnection()
+        {
+            try
+            {
+                using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
+                connection.Open();
+                return Ok("Connection to the database is successful.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to connect to the database.");
+                return StatusCode(500, "Failed to connect to the database.");
+            }
         }
 
     }
