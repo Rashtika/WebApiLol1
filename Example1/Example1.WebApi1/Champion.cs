@@ -8,8 +8,18 @@ namespace ConsoleApp1
 {
     public class Champion
     {
+<<<<<<< HEAD
         public Guid Id;
         public List<Item> Items { get; set; }
+=======
+        public Guid Id { get; set; }
+        public bool IsActive { get; set; }
+        public Guid InventoryId { get; set; }
+        public DateTime DateCreated { get; set; }
+        public int CreatedByUserId { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public Inventory? Inventory { get; set; }
+>>>>>>> 8772c826fd28bea845e2bbd07737bdc39f4fa5d9
         public string? Name { set; get; }
         public Champion(string name, List<Item> items)
         {

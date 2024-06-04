@@ -43,7 +43,11 @@ namespace Example1.WebApi1.Controllers
             using var connection = new NpgsqlConnection(connectionString);
             {
                 connection.Open();
+<<<<<<< HEAD
                 string sql = "SELECT * FROM \"Champion\" c LEFT JOIN \"Weapons\" w ON c.\"Id\"=w.\"Id\" ";
+=======
+                string sql = "SELECT * FROM \"Champion\"";
+>>>>>>> 8772c826fd28bea845e2bbd07737bdc39f4fa5d9
                 using NpgsqlCommand cmd = new NpgsqlCommand(sql, connection);
 
                 //SqlCommand command = new SqlCommand();
@@ -51,6 +55,7 @@ namespace Example1.WebApi1.Controllers
                 using var reader = cmd.ExecuteReader();
                 if (reader.HasRows)
                 {
+<<<<<<< HEAD
                     while (reader.Read())
                     {
                         champions.Add(new Champion
@@ -59,13 +64,43 @@ namespace Example1.WebApi1.Controllers
                             Id = Guid.Parse(reader["Id"].ToString())
 
                         });
+=======
+                    reader.Read();
+                    Champion champion = new Champion
+                    {
+                        Id = reader.GetGuid(reader.GetOrdinal("Id")),
+                        Name = reader.GetString(reader.GetOrdinal("Name")),
+                        InventoryId = reader.GetGuid(reader.GetOrdinal("InventoryId")),
+                        IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
+                        DateCreated = reader.GetDateTime(reader.GetOrdinal("DateCreated")),
+                        CreatedByUserId = reader.GetInt32(reader.GetOrdinal("CreatedByUserId")),
+                        UpdatedByUserId = reader.GetInt32(reader.GetOrdinal("UpdatedByUserId"))
+                    };
+>>>>>>> 8772c826fd28bea845e2bbd07737bdc39f4fa5d9
                 }
             }
             connection.Close();
             return Champions;
         }
+<<<<<<< HEAD
         
         /*[HttpGet(Name = "Get Champions")]
+=======
+
+        [HttpPost(Name = "Insert Champion")]
+        public Champion Insert([FromBody]Champion champion)
+        {
+            using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
+            connection.Open();
+
+            Champions.Add(champion);
+
+            return champion;
+        }
+
+        /*
+        [HttpGet(Name = "Get Champion")]
+>>>>>>> 8772c826fd28bea845e2bbd07737bdc39f4fa5d9
         public List<Champion> Get() {
             return Champions;
         }
@@ -76,7 +111,12 @@ namespace Example1.WebApi1.Controllers
             Champions.Add(champion);
             _logger.LogInformation($"Created champion with name {champion.Name}");
             return champion;
+<<<<<<< HEAD
         }*/
+=======
+        }
+        */
+>>>>>>> 8772c826fd28bea845e2bbd07737bdc39f4fa5d9
 
         [HttpPut("{name}", Name = "Update Champion")]
         public async Task<IActionResult> Update(string name,[FromBody] Champion champion)
@@ -117,6 +157,21 @@ namespace Example1.WebApi1.Controllers
             }
 
             return NoContent();
+        }
+        [HttpGet("test-connection", Name = "TestDatabaseConnection")]
+        public IActionResult TestConnection()
+        {
+            try
+            {
+                using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
+                connection.Open();
+                return Ok("Connection to the database is successful.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to connect to the database.");
+                return StatusCode(500, "Failed to connect to the database.");
+            }
         }
 
     }
