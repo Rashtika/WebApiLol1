@@ -29,7 +29,7 @@ namespace Example1.WebApi1.Controllers
             using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
             {
                 connection.Open();
-                string sql = "SELECT* FROM \"Champion\"";
+                string sql = "SELECT * FROM \"Champion\"";
                 using NpgsqlCommand cmd = new NpgsqlCommand(sql, connection);
 
                 //SqlCommand command = new SqlCommand();
@@ -48,9 +48,7 @@ namespace Example1.WebApi1.Controllers
                         CreatedByUserId = reader.GetInt32(reader.GetOrdinal("CreatedByUserId")),
                         UpdatedByUserId = reader.GetInt32(reader.GetOrdinal("UpdatedByUserId"))
                     };
-
                 }
-
             }
             connection.Close();
             return Champions;
