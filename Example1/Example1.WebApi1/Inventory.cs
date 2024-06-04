@@ -8,11 +8,11 @@ namespace ConsoleApp1
 {
     public class Inventory : IDescription
     {
-        private Guid Id { get; set; }
-        private bool IsActive { get; set; }
-        private DateTime DateCreated { get; set; }
-        private int CreatedByUserId { get; set; }
-        private int UpdatedByUserId { get; set; }
+        public Guid Id { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime DateCreated { get; set; }
+        public int CreatedByUserId { get; set; }
+        public int UpdatedByUserId { get; set; }
         public List<Item> Items { get; set; }
         public Inventory()
         {

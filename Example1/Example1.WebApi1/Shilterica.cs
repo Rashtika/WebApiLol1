@@ -8,11 +8,11 @@ namespace ConsoleApp1
 {
     public class Shilterica : Item
     {
-            public override void OnEquip(Champion champion)
+            public void OnEquip(Champion champion)
             {
                 Console.WriteLine($"{champion.Name} upravo si na glavu stavio shiltericu!");
             }
-            public override void OnUnEquip(Champion champion)
+            public void OnUnEquip(Champion champion)
             {
                 Console.WriteLine($"{champion.Name} upravo si skinuo shiltericu!");
             }

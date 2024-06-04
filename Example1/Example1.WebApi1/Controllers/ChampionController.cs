@@ -1,18 +1,19 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ConsoleApp1;
 using Npgsql;
-using System.Data.Common;
 
 namespace Example1.WebApi1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+
+
     public class ChampionController : ControllerBase
     {
+
         string connectionString = "Host=localhost;Port=5432;Username=postgres;Password=Dakovo123;Database=ChampionDB;";
 
-        private static List<Champion> Champions = new List<Champion> ();
-
+        private static List<Champion> Champions = new List<Champion>();
 
         private readonly ILogger<ChampionController> _logger;
         public ChampionController(ILogger<ChampionController> logger)
@@ -20,87 +21,87 @@ namespace Example1.WebApi1.Controllers
             _logger = logger;
         }
 
-        [HttpPost(Name = "Insert Champion")]
-        public IActionResult Insert([FromBody] Champion champion)
-        {
-            using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
-
-            string commandText = "Insert into \"Champion\" values (@Id, @Name, @Items)";
-            var ChampionFromDb = new Champion();
-            var command = new NpgsqlCommand(commandText, connection);
-
-            connection.Open();
-
-            Champions.Add(champion);
-
-            return Ok(champion);
-        }
-
         [HttpGet(Name = "Find Champions")]
-        public List<Champion> GetAll()
+        public IActionResult GetAll()
         {
             List<Champion> champions = new List<Champion>();
-            using var connection = new NpgsqlConnection(connectionString);
+
+            try
             {
-                connection.Open();
-<<<<<<< HEAD
-                string sql = "SELECT * FROM \"Champion\" c LEFT JOIN \"Weapons\" w ON c.\"Id\"=w.\"Id\" ";
-=======
-                string sql = "SELECT * FROM \"Champion\"";
->>>>>>> 8772c826fd28bea845e2bbd07737bdc39f4fa5d9
-                using NpgsqlCommand cmd = new NpgsqlCommand(sql, connection);
-
-                //SqlCommand command = new SqlCommand();
-
-                using var reader = cmd.ExecuteReader();
-                if (reader.HasRows)
+                using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
                 {
-<<<<<<< HEAD
-                    while (reader.Read())
-                    {
-                        champions.Add(new Champion
-                        {
-                            Name = reader["Name"].ToString(),
-                            Id = Guid.Parse(reader["Id"].ToString())
+                    connection.Open();
 
-                        });
-=======
-                    reader.Read();
-                    Champion champion = new Champion
+                    string sql = "SELECT * FROM \"Champion\"";
+                    using (NpgsqlCommand cmd = new NpgsqlCommand(sql, connection))
                     {
-                        Id = reader.GetGuid(reader.GetOrdinal("Id")),
-                        Name = reader.GetString(reader.GetOrdinal("Name")),
-                        InventoryId = reader.GetGuid(reader.GetOrdinal("InventoryId")),
-                        IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
-                        DateCreated = reader.GetDateTime(reader.GetOrdinal("DateCreated")),
-                        CreatedByUserId = reader.GetInt32(reader.GetOrdinal("CreatedByUserId")),
-                        UpdatedByUserId = reader.GetInt32(reader.GetOrdinal("UpdatedByUserId"))
-                    };
->>>>>>> 8772c826fd28bea845e2bbd07737bdc39f4fa5d9
+                        using (NpgsqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                Champion champion = new Champion
+                                {
+                                    Id = reader.GetGuid(reader.GetOrdinal("Id")),
+                                    Name = reader.GetString(reader.GetOrdinal("Name")),
+                                    InventoryId = reader.GetGuid(reader.GetOrdinal("InventoryId")),
+                                    IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
+                                    DateCreated = reader.GetDateTime(reader.GetOrdinal("DateCreated")),
+                                    CreatedByUserId = reader.GetInt32(reader.GetOrdinal("CreatedByUserId")),
+                                    UpdatedByUserId = reader.GetInt32(reader.GetOrdinal("UpdatedByUserId"))
+                                };
+                                champions.Add(champion);
+                            }
+                        }
+                        connection.Close();
+                    }
                 }
+                return Ok(champions);
             }
-            connection.Close();
-            return Champions;
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred: " + ex.Message);
+            }
         }
-<<<<<<< HEAD
-        
-        /*[HttpGet(Name = "Get Champions")]
-=======
 
         [HttpPost(Name = "Insert Champion")]
-        public Champion Insert([FromBody]Champion champion)
+        public ActionResult<Champion> Insert([FromBody] Champion champion)
         {
-            using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
-            connection.Open();
+            using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
+            {
+                connection.Open();
 
-            Champions.Add(champion);
+                string inventorySql = "INSERT INTO \"Inventory\" (\"DateCreated\") VALUES (@DateCreated) RETURNING \"Id\"";
+                Guid newInventoryId;
+                using (NpgsqlCommand inventoryCmd = new NpgsqlCommand(inventorySql, connection))
+                {
+                    inventoryCmd.Parameters.AddWithValue("@DateCreated", DateTime.UtcNow);
+                    newInventoryId = (Guid)inventoryCmd.ExecuteScalar();
+                }
 
-            return champion;
+                string sql = "INSERT INTO \"Champion\" (\"Id\", \"Name\", \"InventoryId\", \"IsActive\", \"DateCreated\", \"CreatedByUserId\", \"UpdatedByUserId\") " +
+                                 "VALUES (@Id, @Name, @InventoryId, @IsActive, @DateCreated, @CreatedByUserId, @UpdatedByUserId)";
+                using (NpgsqlCommand cmd = new NpgsqlCommand(sql, connection))
+                {
+                    champion.InventoryId = newInventoryId;
+                    champion.DateCreated = DateTime.UtcNow;
+
+                    cmd.Parameters.AddWithValue("@Id", Guid.NewGuid());
+                    cmd.Parameters.AddWithValue("@Name", champion.Name);
+                    cmd.Parameters.AddWithValue("@InventoryId", champion.InventoryId);
+                    cmd.Parameters.AddWithValue("@IsActive", champion.IsActive);
+                    cmd.Parameters.AddWithValue("@DateCreated", champion.DateCreated);
+                    cmd.Parameters.AddWithValue("@CreatedByUserId", champion.CreatedByUserId);
+                    cmd.Parameters.AddWithValue("@UpdatedByUserId", champion.UpdatedByUserId);
+
+                    cmd.ExecuteNonQuery();
+                }
+                connection.Close();
+            }
+            return CreatedAtAction(nameof(GetAll), new { id = champion.Id }, champion);
         }
 
         /*
         [HttpGet(Name = "Get Champion")]
->>>>>>> 8772c826fd28bea845e2bbd07737bdc39f4fa5d9
         public List<Champion> Get() {
             return Champions;
         }
@@ -111,31 +112,45 @@ namespace Example1.WebApi1.Controllers
             Champions.Add(champion);
             _logger.LogInformation($"Created champion with name {champion.Name}");
             return champion;
-<<<<<<< HEAD
-        }*/
-=======
         }
         */
->>>>>>> 8772c826fd28bea845e2bbd07737bdc39f4fa5d9
 
-        [HttpPut("{name}", Name = "Update Champion")]
-        public async Task<IActionResult> Update(string name,[FromBody] Champion champion)
+        [HttpPut("{id}", Name = "Update Champion")]
+        public IActionResult Update(Guid id, [FromBody] Champion champion)
         {
-
-            bool ChampionExist = Champions.Exists(obj => obj.Name == name);
-
-            if (!ChampionExist)
+            if (id != champion.Id)
             {
-                return BadRequest();
+                return BadRequest("This champion does not exist.");
             }
-
-            Champion GetChampionByName = Champions.FirstOrDefault(champion => champion.Name == name);
-
-            if (GetChampionByName != null)
+            using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
-                GetChampionByName.Name = champion.Name;
-            }
+                connection.Open();
 
+                string checkSql = "SELECT COUNT(1) FROM \"Champion\" WHERE \"Id\" = @Id";
+                using (NpgsqlCommand checkCmd = new NpgsqlCommand(checkSql, connection))
+                {
+                    checkCmd.Parameters.AddWithValue("@Id", id);
+                    int count = (int)checkCmd.ExecuteScalar();
+                    if (count == 0)
+                    {
+                        return NotFound("Champion not found");
+                    }
+                }
+                string sql = "UPDATE \"Champion\" SET \"Name\" = @Name, \"InventoryId\" = @InventoryId, \"IsActive\" = @IsActive, " +
+                    "\"UpdatedByUserId\" = @UpdatedByUserId, \"DateUpdated\" = @DateUpdated WHERE \"Id\" = @Id";
+                using (NpgsqlCommand cmd = new NpgsqlCommand(sql, connection))
+                {
+                    cmd.Parameters.AddWithValue("@Id", champion.Id);
+                    cmd.Parameters.AddWithValue("@Name", champion.Name);
+                    cmd.Parameters.AddWithValue("@InventoryId", champion.InventoryId);
+                    cmd.Parameters.AddWithValue("@IsActive", champion.IsActive);
+                    cmd.Parameters.AddWithValue("@UpdatedByUserId", champion.UpdatedByUserId);
+                    cmd.Parameters.AddWithValue("@DateUpdated", DateTime.UtcNow);
+
+                    cmd.ExecuteNonQuery();
+                }
+                connection.Close();
+            }
             return NoContent();
         }
 
@@ -151,7 +166,7 @@ namespace Example1.WebApi1.Controllers
 
             Champion championToRemove = Champions.FirstOrDefault(x => x.Name == name);
 
-            if(championToRemove != null)
+            if (championToRemove != null)
             {
                 Champions.Remove(championToRemove);
             }
@@ -173,6 +188,5 @@ namespace Example1.WebApi1.Controllers
                 return StatusCode(500, "Failed to connect to the database.");
             }
         }
-
     }
 }

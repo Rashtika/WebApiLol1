@@ -8,11 +8,11 @@ namespace ConsoleApp1
 {
     public class SupermenoveGache : Item
     {
-        public override void OnEquip(Champion champion)
+        public  void OnEquip(Champion champion)
         {
             Console.WriteLine($"{champion.Name} upravo si obukao gachiche!");
         }
-        public override void OnUnEquip(Champion champion)
+        public  void OnUnEquip(Champion champion)
         {
             Console.WriteLine($"{champion.Name} upravo si skinuo gachiche!");
         }
