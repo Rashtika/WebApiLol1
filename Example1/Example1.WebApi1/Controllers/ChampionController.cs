@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ConsoleApp1;
 using Npgsql;
+using System.Xml.Linq;
 
 namespace Example1.WebApi1.Controllers
 {
@@ -11,7 +12,7 @@ namespace Example1.WebApi1.Controllers
     public class ChampionController : ControllerBase
     {
 
-        string connectionString = "Host=localhost;Port=5432;Username=postgres;Password=Dakovo123;Database=ChampionDB;";
+        string connectionString = "Host=localhost;Port=5433;Username=postgres;Password=Dakovo123;Database=ChampionDB;";
 
         private static List<Champion> Champions = new List<Champion>();
 
@@ -100,79 +101,80 @@ namespace Example1.WebApi1.Controllers
             return CreatedAtAction(nameof(GetAll), new { id = champion.Id }, champion);
         }
 
-        /*
-        [HttpGet(Name = "Get Champion")]
-        public List<Champion> Get() {
-            return Champions;
-        }
-
-        [HttpPost(Name = "Crate Champion")]
-        public Champion Create([FromBody]Champion champion)
+        [HttpGet("{id}")]
+        public IActionResult GetChampionById(Guid id)
         {
-            Champions.Add(champion);
-            _logger.LogInformation($"Created champion with name {champion.Name}");
-            return champion;
-        }
-        */
-
-        [HttpPut("{id}", Name = "Update Champion")]
-        public IActionResult Update(Guid id, [FromBody] Champion champion)
-        {
-            if (id != champion.Id)
+            try
             {
-                return BadRequest("This champion does not exist.");
-            }
-            using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
-            {
-                connection.Open();
-
-                string checkSql = "SELECT COUNT(1) FROM \"Champion\" WHERE \"Id\" = @Id";
-                using (NpgsqlCommand checkCmd = new NpgsqlCommand(checkSql, connection))
+                using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
                 {
-                    checkCmd.Parameters.AddWithValue("@Id", id);
-                    int count = (int)checkCmd.ExecuteScalar();
-                    if (count == 0)
+                    connection.Open();
+
+                    string sql = "SELECT * FROM \"Champion\" WHERE \"Id\" = @Id";
+                    using (NpgsqlCommand command = new NpgsqlCommand(sql, connection))
                     {
-                        return NotFound("Champion not found");
+                        command.Parameters.AddWithValue("Id", id);
+                        using (NpgsqlDataReader reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                Champion champion = new Champion
+                                {
+                                    Id = reader.GetGuid(reader.GetOrdinal("Id")),
+                                    Name = reader.GetString(reader.GetOrdinal("Name")),
+                                    InventoryId = reader.GetGuid(reader.GetOrdinal("InventoryId")),
+                                    IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
+                                    DateCreated = reader.GetDateTime(reader.GetOrdinal("DateCreated")),
+                                    CreatedByUserId = reader.GetInt32(reader.GetOrdinal("CreatedByUserId")),
+                                    UpdatedByUserId = reader.GetInt32(reader.GetOrdinal("UpdatedByUserId"))
+                                };
+
+
+                                return Ok(champion);
+                            }
+                        }
+                    }
+                    connection.Close();
+
+                }
+
+                return NotFound("Champion not found.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred: " + ex.Message);
+            }
+        }
+
+
+        [HttpDelete("{id}")]
+        public IActionResult DeleteChampion(Guid id)
+        {
+            try
+            {
+                using (NpgsqlConnection conn = new NpgsqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    string sql = "DELETE FROM \"Champion\" WHERE \"Id\" = @Id";
+                    using (NpgsqlCommand command = new NpgsqlCommand(sql, conn))
+                    {
+                        command.Parameters.AddWithValue("Id", id);
+                        int rowsAffected = command.ExecuteNonQuery();
+
+                        if (rowsAffected == 0)
+                            return NotFound("Champion not found.");
+
+                        return Ok("Champion removed successfully.");
                     }
                 }
-                string sql = "UPDATE \"Champion\" SET \"Name\" = @Name, \"InventoryId\" = @InventoryId, \"IsActive\" = @IsActive, " +
-                    "\"UpdatedByUserId\" = @UpdatedByUserId, \"DateUpdated\" = @DateUpdated WHERE \"Id\" = @Id";
-                using (NpgsqlCommand cmd = new NpgsqlCommand(sql, connection))
-                {
-                    cmd.Parameters.AddWithValue("@Id", champion.Id);
-                    cmd.Parameters.AddWithValue("@Name", champion.Name);
-                    cmd.Parameters.AddWithValue("@InventoryId", champion.InventoryId);
-                    cmd.Parameters.AddWithValue("@IsActive", champion.IsActive);
-                    cmd.Parameters.AddWithValue("@UpdatedByUserId", champion.UpdatedByUserId);
-                    cmd.Parameters.AddWithValue("@DateUpdated", DateTime.UtcNow);
-
-                    cmd.ExecuteNonQuery();
-                }
-                connection.Close();
             }
-            return NoContent();
-        }
-
-        [HttpDelete("{name}", Name = "Delete Champion")]
-        public IActionResult Delete(string name)
-        {
-            bool ChampionExist = Champions.Exists(obj => obj.Name == name);
-
-            if (!ChampionExist)
+            catch (Exception ex)
             {
-                return BadRequest();
+                return StatusCode(500, "An error occurred: " + ex.Message);
             }
-
-            Champion championToRemove = Champions.FirstOrDefault(x => x.Name == name);
-
-            if (championToRemove != null)
-            {
-                Champions.Remove(championToRemove);
-            }
-
-            return NoContent();
         }
+    
         [HttpGet("test-connection", Name = "TestDatabaseConnection")]
         public IActionResult TestConnection()
         {
